@@ -1,18 +1,17 @@
 package com.googlecode.flexistate.examples.trafficlights.service;
 
-import com.googlecode.flexistate.annotation.StateMachine;
+import com.googlecode.flexistate.annotation.ExecuteOn;
 import com.googlecode.flexistate.annotation.State;
+import com.googlecode.flexistate.annotation.StateMachine;
 import com.googlecode.flexistate.annotation.Transition;
-import com.googlecode.flexistate.annotation.TransitionAction;
 import com.googlecode.flexistate.annotation.TransitionSet;
-import com.googlecode.flexistate.examples.trafficlights.enumeration.TrafficLightsEventWithContext;
 import com.googlecode.flexistate.examples.trafficlights.enumeration.TrafficLightsState;
 
 @StateMachine
-public class TrafficLightsWithTransitionAction
+public class TrafficLightsWithAnnotations
 {
 
-	private TrafficLightsState state;
+	private TrafficLightsState state = TrafficLightsState.off;
 
 	@State(initial = true)
 	@TransitionSet({@Transition(event = "switchOn", target = "red")})
@@ -28,7 +27,7 @@ public class TrafficLightsWithTransitionAction
 		state = TrafficLightsState.red;
 	}
 
-	@State
+	@State(ExecuteOn.exit)
 	@TransitionSet({@Transition(event = "switchOff", target = "off"),@Transition(event = "timer", target = "green")})
 	public void amber()
 	{
@@ -40,12 +39,6 @@ public class TrafficLightsWithTransitionAction
 	public void green()
 	{
 		state = TrafficLightsState.green;
-	}
-
-	@TransitionAction(from = "green", to = "red")
-	public void green2Red(TrafficLightsEventWithContext event)
-	{
-		event.setGreeting("You can go !!!");
 	}
 
 	public TrafficLightsState getState()
@@ -62,5 +55,4 @@ public class TrafficLightsWithTransitionAction
 	{
 		return state != TrafficLightsState.off;
 	}
-
 }

@@ -1,8 +1,7 @@
 package com.googlecode.flexistate.examples.trafficlights.service;
 
-import com.googlecode.flexistate.annotation.ExecutionType;
 import com.googlecode.flexistate.annotation.StateMachine;
-import com.googlecode.flexistate.annotation.StateMethod;
+import com.googlecode.flexistate.annotation.State;
 import com.googlecode.flexistate.examples.trafficlights.annotation.TLTransition;
 import com.googlecode.flexistate.examples.trafficlights.annotation.TLTransitionAction;
 import com.googlecode.flexistate.examples.trafficlights.annotation.TLTransitionSet;
@@ -15,32 +14,32 @@ public class TrafficLightsWithCustomAnnotations
 
 	private TrafficLightsState state;
 
-	@StateMethod(initial = true)
+	@State(initial = true)
 	@TLTransitionSet({@TLTransition(event = TrafficLightsEvent.switchOn, target = TrafficLightsState.red)})
 	public void off()
 	{
 		state = null;
 	}
 
-	@StateMethod
+	@State
 	@TLTransitionSet({@TLTransition(event = TrafficLightsEvent.switchOff, target = TrafficLightsState.off),
-					@TLTransition(event = TrafficLightsEvent.timer, target = TrafficLightsState.amber)})
+						@TLTransition(event = TrafficLightsEvent.timer, target = TrafficLightsState.amber)})
 	public void red()
 	{
 		state = TrafficLightsState.red;
 	}
 
-	@StateMethod(executeOn = ExecutionType.exit)
+	@State
 	@TLTransitionSet({@TLTransition(event = TrafficLightsEvent.switchOff, target = TrafficLightsState.off),
-					@TLTransition(event = TrafficLightsEvent.timer, target = TrafficLightsState.green)})
+						@TLTransition(event = TrafficLightsEvent.timer, target = TrafficLightsState.green)})
 	public void amber()
 	{
 		state = TrafficLightsState.amber;
 	}
 
-	@StateMethod
+	@State
 	@TLTransitionSet({@TLTransition(event = TrafficLightsEvent.switchOff, target = TrafficLightsState.off),
-					@TLTransition(event = TrafficLightsEvent.timer, target = TrafficLightsState.red)})
+						@TLTransition(event = TrafficLightsEvent.timer, target = TrafficLightsState.red)})
 	public void green()
 	{
 		state = TrafficLightsState.green;

@@ -1,18 +1,18 @@
 package com.googlecode.flexistate.examples.trafficlights;
 
-import junit.framework.Assert;
-
 import org.apache.commons.scxml.model.State;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.googlecode.flexistate.Builders;
 import com.googlecode.flexistate.FlexiState;
 import com.googlecode.flexistate.examples.trafficlights.annotation.TLTransitionAction;
 import com.googlecode.flexistate.examples.trafficlights.annotation.TLTransitionSet;
-import com.googlecode.flexistate.examples.trafficlights.context.TrafficLightsContext;
 import com.googlecode.flexistate.examples.trafficlights.enumeration.TrafficLightsEvent;
+import com.googlecode.flexistate.examples.trafficlights.enumeration.TrafficLightsEventWithContext;
 import com.googlecode.flexistate.examples.trafficlights.enumeration.TrafficLightsState;
 import com.googlecode.flexistate.examples.trafficlights.service.TrafficLights;
+import com.googlecode.flexistate.examples.trafficlights.service.TrafficLightsWithAnnotations;
 import com.googlecode.flexistate.examples.trafficlights.service.TrafficLightsWithContext;
 import com.googlecode.flexistate.examples.trafficlights.service.TrafficLightsWithCustomAnnotations;
 import com.googlecode.flexistate.examples.trafficlights.service.TrafficLightsWithTransitionAction;
@@ -21,16 +21,16 @@ public class TestTrafficLights
 {
 
 	@Test
-	public void testProcessSingle()
+	public void testTrigger()
 	{
 
 		/*
 		 * when
 		 */
-		TrafficLights trafficLights = new TrafficLights();
+		TrafficLightsWithAnnotations trafficLights = new TrafficLightsWithAnnotations();
 
-		FlexiState<TrafficLightsEvent, Void> trafficLightsStateMachine =
-			Builders.forEvent(TrafficLightsEvent.class, trafficLights).build();
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEvent.class).build();
 
 		/*
 		 * should 
@@ -53,17 +53,17 @@ public class TestTrafficLights
 		/*
 		 * given
 		 */
-		TrafficLights trafficLights = new TrafficLights();
+		TrafficLightsWithAnnotations trafficLights = new TrafficLightsWithAnnotations();
 
-		FlexiState<TrafficLightsEvent, Void> trafficLightsStateMachine =
-			Builders.forEvent(TrafficLightsEvent.class, trafficLights).build();
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEvent.class).build();
 
 		/*
 		 * when
 		 */
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.switchOn, null);
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer, null);
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer, null);
+		trafficLightsStateMachine.enqueue(TrafficLightsEvent.switchOn);
+		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
+		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
 		trafficLightsStateMachine.processAll();
 
 		/*
@@ -79,23 +79,23 @@ public class TestTrafficLights
 		 * given
 		 */
 		TrafficLightsWithContext trafficLights = new TrafficLightsWithContext();
-		TrafficLightsContext context = new TrafficLightsContext();
 
-		FlexiState<TrafficLightsEvent, TrafficLightsContext> trafficLightsStateMachine =
-			Builders.forEventWithContext(TrafficLightsEvent.class, TrafficLightsContext.class, trafficLights).build();
+		FlexiState<TrafficLightsEventWithContext> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEventWithContext.class).build();
 
 		/*
 		 * when
 		 */
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.switchOn);
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer, context);
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.switchOn));
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.timer));
+		TrafficLightsEventWithContext last = new TrafficLightsEventWithContext(TrafficLightsEvent.timer);
+		trafficLightsStateMachine.enqueue(last);
 		trafficLightsStateMachine.processAll();
 
 		/*
 		 * should
 		 */
-		Assert.assertEquals(1, context.getNumberOfCycles());
+		Assert.assertEquals("You can go !!!", last.getGreeting());
 	}
 
 	@Test
@@ -106,9 +106,10 @@ public class TestTrafficLights
 		 */
 		TrafficLightsWithCustomAnnotations trafficLights = new TrafficLightsWithCustomAnnotations();
 
-		FlexiState<TrafficLightsEvent, Void> trafficLightsStateMachine =
-			Builders.forEvent(TrafficLightsEvent.class, trafficLights).transitionSetAnnotation(TLTransitionSet.class)
-				.transitionActionAnnotation(TLTransitionAction.class).build();
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEvent.class)
+				.transitionSetAnnotation(TLTransitionSet.class).transitionActionAnnotation(TLTransitionAction.class)
+				.build();
 
 		/*
 		 * should
@@ -129,11 +130,12 @@ public class TestTrafficLights
 		/*
 		 * given
 		 */
-		TrafficLights trafficLights = new TrafficLights();
+		TrafficLightsWithAnnotations trafficLights = new TrafficLightsWithAnnotations();
 
-		FlexiState<TrafficLightsEvent, Void> trafficLightsStateMachine =
-			Builders.forEvent(TrafficLightsEvent.class, trafficLights).transitionSetAnnotation(TLTransitionSet.class)
-				.transitionActionAnnotation(TLTransitionAction.class).advanceToState("red").build();
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEvent.class)
+				.transitionSetAnnotation(TLTransitionSet.class).transitionActionAnnotation(TLTransitionAction.class)
+				.advanceToState("red").build();
 
 		/*
 		 * when
@@ -155,11 +157,12 @@ public class TestTrafficLights
 		/*
 		 * given
 		 */
-		TrafficLights trafficLights = new TrafficLights();
+		TrafficLightsWithAnnotations trafficLights = new TrafficLightsWithAnnotations();
 
-		FlexiState<TrafficLightsEvent, Void> trafficLightsStateMachine =
-			Builders.forEvent(TrafficLightsEvent.class, trafficLights).transitionSetAnnotation(TLTransitionSet.class)
-				.transitionActionAnnotation(TLTransitionAction.class).advanceAndExecute("red").build();
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEvent.class)
+				.transitionSetAnnotation(TLTransitionSet.class).transitionActionAnnotation(TLTransitionAction.class)
+				.advanceAndExecute("red").build();
 
 		/*
 		 * when
@@ -183,23 +186,79 @@ public class TestTrafficLights
 		 */
 		TrafficLightsWithTransitionAction trafficLights = new TrafficLightsWithTransitionAction();
 
-		FlexiState<TrafficLightsEvent, TrafficLightsContext> trafficLightsStateMachine =
-			Builders.forEventWithContext(TrafficLightsEvent.class, TrafficLightsContext.class, trafficLights).build();
-
-		TrafficLightsContext context = new TrafficLightsContext();
+		FlexiState<TrafficLightsEventWithContext> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEventWithContext.class).build();
 
 		/*
 		 * when
 		 */
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.switchOn);
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
-		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer, context);
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.switchOn));
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.timer));
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.timer));
+		TrafficLightsEventWithContext last = new TrafficLightsEventWithContext(TrafficLightsEvent.timer);
+		trafficLightsStateMachine.enqueue(last);
 		trafficLightsStateMachine.processAll();
 
 		/*
 		 * should
 		 */
-		Assert.assertEquals(1, context.getNumberOfCycles());
+		Assert.assertEquals("You can go !!!", last.getGreeting());
 	}
+
+	@Test
+	public void testSCXML()
+	{
+
+		/*
+		 * when
+		 */
+		TrafficLights trafficLights = new TrafficLights();
+
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forDelegateWithXML("traffic-lights.xml", trafficLights, TrafficLightsEvent.class).build();
+
+		/*
+		 * should 
+		 */
+		Assert.assertEquals(TrafficLightsState.off, trafficLights.getState());
+
+		trafficLightsStateMachine.trigger(TrafficLightsEvent.switchOn);
+		Assert.assertEquals(TrafficLightsState.red, trafficLights.getState());
+
+		trafficLightsStateMachine.trigger(TrafficLightsEvent.timer);
+		Assert.assertEquals(TrafficLightsState.amber, trafficLights.getState());
+
+		trafficLightsStateMachine.trigger(TrafficLightsEvent.timer);
+		Assert.assertEquals(TrafficLightsState.green, trafficLights.getState());
+	}
+
+	@Test
+	public void testSCXMLAndTransitionAction()
+	{
+
+		/*
+		 * when
+		 */
+		TrafficLights trafficLights = new TrafficLights();
+
+		FlexiState<TrafficLightsEventWithContext> trafficLightsStateMachine =
+			Builders.forDelegateWithXML("traffic-lights-with-action.xml", trafficLights,
+				TrafficLightsEventWithContext.class).build();
+
+		/*
+		 * when
+		 */
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.switchOn));
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.timer));
+		trafficLightsStateMachine.enqueue(new TrafficLightsEventWithContext(TrafficLightsEvent.timer));
+		TrafficLightsEventWithContext last = new TrafficLightsEventWithContext(TrafficLightsEvent.timer);
+		trafficLightsStateMachine.enqueue(last);
+		trafficLightsStateMachine.processAll();
+
+		/*
+		 * should 
+		 */
+		Assert.assertEquals("You can go !!!", last.getGreeting());
+	}
+
 }

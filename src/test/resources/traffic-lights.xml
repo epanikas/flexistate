@@ -1,0 +1,24 @@
+<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" initialstate="off">
+
+    <state id="off">
+        <transition event="switchOn" target="red" />
+    </state>
+    
+    <state id="red">
+        <transition event="switchOff" target="off" />
+        <transition event="timer" target="amber" />
+    </state>
+    
+    <state id="amber">
+        <transition event="switchOff" target="off" />
+        <transition event="timer" target="green" />
+    </state>
+    
+    <state id="green">
+        <transition event="switchOff" target="off" />
+        <transition event="timer" target="red" />
+    </state>
+
+    
+</scxml>
+

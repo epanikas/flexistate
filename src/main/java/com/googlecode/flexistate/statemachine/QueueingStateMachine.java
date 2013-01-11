@@ -21,18 +21,16 @@ import com.googlecode.flexistate.FlexiState;
 import com.googlecode.flexistate.statemachine.listener.Delegatinglistener;
 import com.googlecode.flexistate.statemachine.listener.TransitionSensorListener;
 
-public class QueueingStateMachine<TEvent extends Enum<TEvent>, TEventContext>
-	implements FlexiState<TEvent, TEventContext>
+public class QueueingStateMachine<TEvent>
+	implements FlexiState<TEvent>
 {
 
-	public static final String EVENT_CONTEXT_KEY = "_EVENT_CONTEXT_KEY";
 	public static final String EVENT_KEY = "_EVENT_KEY";
 	public static final String SKIP_ENTRY_KEY = "_SKIP_ENTRY_KEY";
 	public static final String STATE_MACHINE_KEY = "_EXECUTING_STATE_MACHINE_KEY";
 	public static final String DELEGATE_KEY = "_DELEGATE_KEY";
 
-	private ConcurrentLinkedQueue<EventWithContext<TEvent, TEventContext>> eventsQueue =
-		new ConcurrentLinkedQueue<EventWithContext<TEvent, TEventContext>>();
+	private ConcurrentLinkedQueue<TEvent> eventsQueue = new ConcurrentLinkedQueue<TEvent>();
 
 	private TransitionSensorListener transitionListener = new TransitionSensorListener();
 
@@ -40,12 +38,11 @@ public class QueueingStateMachine<TEvent extends Enum<TEvent>, TEventContext>
 	private SCXMLExecutor engine;
 	private Log log = LogFactory.getLog(this.getClass());
 
-	public QueueingStateMachine(SCXML stateMachine, final Object delegate, Class<TEvent> eventClass,
-					Class<TEventContext> contextClass)
+	public QueueingStateMachine(SCXML stateMachine, final Object delegate, Class<TEvent> eventClass)
 	{
 		this.stateMachine = stateMachine;
-		initialize(stateMachine, new JexlContext(), new JexlEvaluator(), new Delegatinglistener<TEvent, TEventContext>(
-			delegate, this, eventClass, contextClass));
+		initialize(stateMachine, new JexlContext(), new JexlEvaluator(), new Delegatinglistener<TEvent>(delegate, this,
+			eventClass));
 	}
 
 	public QueueingStateMachine(SCXML stateMachine, final SCXMLListener listener)
@@ -57,13 +54,7 @@ public class QueueingStateMachine<TEvent extends Enum<TEvent>, TEventContext>
 	@Override
 	public void enqueue(TEvent event)
 	{
-		doEnqueue(event, null);
-	}
-
-	@Override
-	public void enqueue(TEvent event, TEventContext context)
-	{
-		doEnqueue(event, context);
+		doEnqueue(event);
 	}
 
 	@Override
@@ -80,26 +71,19 @@ public class QueueingStateMachine<TEvent extends Enum<TEvent>, TEventContext>
 	@Override
 	public boolean trigger(TEvent event)
 	{
-		doEnqueue(event, null);
+		doEnqueue(event);
 		return processSingleEvent();
 	}
 
-	@Override
-	public boolean trigger(TEvent event, TEventContext context)
+	private final void doEnqueue(TEvent event)
 	{
-		doEnqueue(event, context);
-		return processSingleEvent();
-	}
-
-	private final void doEnqueue(TEvent event, TEventContext context)
-	{
-		eventsQueue.add(new EventWithContext<TEvent, TEventContext>(event, context));
+		eventsQueue.add(event);
 	}
 
 	private boolean processSingleEvent()
 	{
 
-		EventWithContext<TEvent, TEventContext> item = eventsQueue.peek();
+		TEvent item = eventsQueue.peek();
 		if (item == null) {
 			/*
 			 * nothing to do here
@@ -107,12 +91,21 @@ public class QueueingStateMachine<TEvent extends Enum<TEvent>, TEventContext>
 			return false;
 		}
 
-		getEngine().getRootContext().set(EVENT_KEY, item.getEvent());
-		getEngine().getRootContext().set(EVENT_CONTEXT_KEY, item.getEventContext());
+		getEngine().getRootContext().set(EVENT_KEY, item);
 
 		transitionListener.reset();
 
-		fireEvent(item.getEvent().name());
+		String event = "";
+		if (item instanceof Event) {
+			event = ((Event) item).getEventName();
+		}
+		else if (item instanceof Enum<?>) {
+			event = ((Enum<?>) item).name();
+		}
+		else {
+			event = item.toString();
+		}
+		fireEvent(event);
 
 		if (transitionListener.isExecutedTransition()) {
 			eventsQueue.remove();
@@ -179,7 +172,7 @@ public class QueueingStateMachine<TEvent extends Enum<TEvent>, TEventContext>
 	}
 
 	@Override
-	public Queue<EventWithContext<TEvent, TEventContext>> getEventQueue()
+	public Queue<TEvent> getEventQueue()
 	{
 		throw new UnsupportedOperationException("getEventQueue not implemented");
 	}
