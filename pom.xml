@@ -28,7 +28,7 @@ limitations under the License.
 
 	<groupId>com.googlecode.flexistate</groupId>
 	<artifactId>flexistate</artifactId>
-	<version>0.1.1-SNAPSHOT</version>
+	<version>0.1.1</version>
 	<packaging>jar</packaging>
 
 	<name>Flexistate</name>
