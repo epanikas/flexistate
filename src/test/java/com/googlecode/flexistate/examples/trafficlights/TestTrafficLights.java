@@ -73,6 +73,54 @@ public class TestTrafficLights
 	}
 
 	@Test
+	public void testProcessAllInversed()
+	{
+		/*
+		 * given
+		 */
+		TrafficLightsWithAnnotations trafficLights = new TrafficLightsWithAnnotations();
+
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEvent.class).build();
+
+		/*
+		 * when
+		 */
+		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
+		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
+		trafficLightsStateMachine.enqueue(TrafficLightsEvent.switchOn);
+		trafficLightsStateMachine.processAll();
+
+		/*
+		 * should
+		 */
+		Assert.assertEquals(TrafficLightsState.green, trafficLights.getState());
+	}
+
+	@Test
+	public void testProcessAllBadEvent()
+	{
+		/*
+		 * given
+		 */
+		TrafficLightsWithAnnotations trafficLights = new TrafficLightsWithAnnotations();
+
+		FlexiState<TrafficLightsEvent> trafficLightsStateMachine =
+			Builders.forAnnotatedDelegate(trafficLights, TrafficLightsEvent.class).build();
+
+		/*
+		 * when
+		 */
+		trafficLightsStateMachine.enqueue(TrafficLightsEvent.timer);
+		trafficLightsStateMachine.processAll();
+
+		/*
+		 * should
+		 */
+		Assert.assertEquals(TrafficLightsState.off, trafficLights.getState());
+	}
+
+	@Test
 	public void testProcessAllWithCustomContext()
 	{
 		/*

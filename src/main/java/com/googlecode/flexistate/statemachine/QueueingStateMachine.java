@@ -1,7 +1,9 @@
 package com.googlecode.flexistate.statemachine;
 
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,7 +32,8 @@ public class QueueingStateMachine<TEvent>
 	public static final String STATE_MACHINE_KEY = "_EXECUTING_STATE_MACHINE_KEY";
 	public static final String DELEGATE_KEY = "_DELEGATE_KEY";
 
-	private ConcurrentLinkedQueue<TEvent> eventsQueue = new ConcurrentLinkedQueue<TEvent>();
+	private ConcurrentLinkedQueue<TEvent> eventQueue = new ConcurrentLinkedQueue<TEvent>();
+	private LinkedBlockingDeque<TEvent> waitingStack = new LinkedBlockingDeque<TEvent>();
 
 	private TransitionSensorListener transitionListener = new TransitionSensorListener();
 
@@ -60,9 +63,11 @@ public class QueueingStateMachine<TEvent>
 	@Override
 	public boolean processAll()
 	{
+		boolean doContinue = false;
 		boolean res = false;
-		while (processSingleEvent()) {
-			res = true;
+		while (doContinue || eventQueue.isEmpty() == false) {
+			doContinue = processSingleEvent();
+			res |= doContinue;
 		}
 
 		return res;
@@ -77,13 +82,22 @@ public class QueueingStateMachine<TEvent>
 
 	private final void doEnqueue(TEvent event)
 	{
-		eventsQueue.add(event);
+		eventQueue.add(event);
 	}
 
 	private boolean processSingleEvent()
 	{
 
-		TEvent item = eventsQueue.peek();
+		boolean isFromWaitingQueue = false;
+		TEvent item = eventQueue.poll();
+		if (item == null) {
+			/*
+			 * try the waiting queue
+			 */
+			item = waitingStack.peekLast();
+			isFromWaitingQueue = true;
+		}
+
 		if (item == null) {
 			/*
 			 * nothing to do here
@@ -108,10 +122,16 @@ public class QueueingStateMachine<TEvent>
 		fireEvent(event);
 
 		if (transitionListener.isExecutedTransition()) {
-			eventsQueue.remove();
+			if (isFromWaitingQueue) {
+				waitingStack.removeLast();
+			}
 			return true;
 		}
 
+		/*
+		 * save it for later
+		 */
+		waitingStack.add(item);
 		return false;
 	}
 
@@ -174,13 +194,18 @@ public class QueueingStateMachine<TEvent>
 	@Override
 	public Queue<TEvent> getEventQueue()
 	{
-		throw new UnsupportedOperationException("getEventQueue not implemented");
+		return new ArrayDeque<TEvent>(eventQueue);
+	}
+
+	public Queue<TEvent> getWaitingQueue()
+	{
+		return new ArrayDeque<TEvent>(waitingStack);
 	}
 
 	@Override
 	public void flushEventQueue()
 	{
-		eventsQueue.clear();
+		eventQueue.clear();
 	}
 
 }
